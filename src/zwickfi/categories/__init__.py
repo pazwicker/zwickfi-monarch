@@ -1,1 +1,0 @@
-from .categories import zwickfi_transaction_categories

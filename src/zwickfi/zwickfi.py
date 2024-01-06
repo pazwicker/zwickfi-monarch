@@ -1,8 +1,7 @@
 #!.venv/bin/python3.11
 
-from transactions import zwickfi_transactions
+import monarch
 from bigquery import BigQuery
-from categories import zwickfi_transaction_categories
 from monarchmoney import MonarchMoney
 from dotenv import load_dotenv
 import asyncio
@@ -20,13 +19,19 @@ def login():
 
 
 def zwickfi():
+    # log in to monarch
     mm = login()
-    transactions = zwickfi_transactions.get_transactions(mm)
-    transaction_categories = zwickfi_transaction_categories.get_transaction_categories(
+
+    # pull various data sets from monarch
+    transactions = monarch.transactions.get_transactions(mm)
+    transaction_categories = monarch.transaction_categories.get_transaction_categories(
         mm
     )
-    tables = [transactions, transaction_categories]
-    table_names = ["transactions", "transaction_categories"]
+    transaction_tags = monarch.transaction_tags.get_transaction_tags(mm)
+
+    # write monarch data to bigquery
+    tables = [transactions, transaction_categories, transaction_tags]
+    table_names = ["transactions", "transaction_categories", "transaction_tags"]
 
     for i, table in enumerate(tables):
         table_name = table_names[i]
