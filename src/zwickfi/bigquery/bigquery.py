@@ -4,7 +4,7 @@ import os
 
 class BigQuery(object):
     def write_to_bigquery(df, tablename):
-        relative_path = '../../secrets/zwickfi-app-service-account.json'
+        relative_path = '../../secrets/servoce-account-credentials.json'
         absolute_path = os.path.abspath(relative_path)
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = absolute_path
         """Load dataframe data into a specified BigQuery table."""
