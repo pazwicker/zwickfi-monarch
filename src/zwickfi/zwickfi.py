@@ -13,7 +13,7 @@ monarch_password = os.getenv("MONARCH_PASSWORD")
 
 
 def login():
-    mm = MonarchMoney()
+    mm = MonarchMoney(timeout=30)
     asyncio.run(mm.login(monarch_email, monarch_password))
     return mm
 
@@ -23,11 +23,11 @@ def zwickfi():
     mm = login()
 
     # pull various data sets from monarch
-    transactions = monarch.transactions.get_transactions(mm)
-    transaction_categories = monarch.transaction_categories.get_transaction_categories(
+    transactions = monarch.Transactions.get_transactions(mm, limit=40000)
+    transaction_categories = monarch.TransactionCategories.get_transaction_categories(
         mm
     )
-    transaction_tags = monarch.transaction_tags.get_transaction_tags(mm)
+    transaction_tags = monarch.TransactionTags.get_transaction_tags(mm)
 
     # write monarch data to bigquery
     tables = [transactions, transaction_categories, transaction_tags]
