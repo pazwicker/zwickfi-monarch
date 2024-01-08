@@ -160,4 +160,4 @@ cython_debug/
 #.idea/
 
 # session data
-.mm/
+.mm
