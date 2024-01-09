@@ -1,7 +1,7 @@
 #!.venv/bin/python3.11
 
-import monarch
-from bigquery import BigQuery
+from src.zwickfi.monarch import monarch
+from src.zwickfi.bigquery import BigQuery
 from monarchmoney import MonarchMoney
 from dotenv import load_dotenv
 import asyncio

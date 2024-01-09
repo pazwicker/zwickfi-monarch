@@ -1,11 +1,12 @@
 from flask import Flask
-import subprocess
+
+from src.zwickfi import zwickfi
 
 app = Flask(__name__)
 
 @app.route('/')
 def index():
-    subprocess.run(["python3.11", "./src/zwickfi/zwickfi.py"])
+    zwickfi()
     return "Task executed", 200
 
 if __name__ == "__main__":
