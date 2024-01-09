@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    subprocess.run(["python", "./src/zwickfi/zwickfi.py"])
+    subprocess.run(["python3.11", "./src/zwickfi/zwickfi.py"])
     return "Task executed", 200
 
 if __name__ == "__main__":
