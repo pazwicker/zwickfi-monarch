@@ -12,4 +12,5 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Run zwickfi.py when the container launches
-CMD ["python3.11", "./src/zwickfi/zwickfi.py"]
+EXPOSE 8080
+CMD ["python3.11", "app.py"]
