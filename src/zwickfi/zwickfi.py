@@ -22,12 +22,13 @@ def zwickfi():
     # log in to monarch
     mm = login()
 
-    # pull various data sets from monarch
-    transactions = monarch.Transactions.get_transactions(mm, limit=40000)
-    transaction_categories = monarch.TransactionCategories.get_transaction_categories(
+    # pull transactional data sets from monarch
+    total_transactions = monarch.Transactions.get_total_transactions(mm)
+    transactions = monarch.Transactions.get_transactions(mm, limit=total_transactions)
+    transaction_categories = monarch.Transactions.get_transaction_categories(
         mm
     )
-    transaction_tags = monarch.TransactionTags.get_transaction_tags(mm)
+    transaction_tags = monarch.Transactions.get_transaction_tags(mm)
 
     # write monarch data to bigquery
     tables = [transactions, transaction_categories, transaction_tags]
