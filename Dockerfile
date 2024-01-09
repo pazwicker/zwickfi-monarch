@@ -1,16 +1,13 @@
-# Use an official Python runtime as a parent image
+FROM golang:1.13 as builder
+WORKDIR /app
+COPY invoke.go ./
+RUN CGO_ENABLED=0 GOOS=linux go build -v -o server
+
 FROM python:3.11-slim
-
-# Set the working directory in the container
-WORKDIR /usr/src/app
-
-# Copy the current directory contents into the container at /usr/src/app
-COPY . .
-
-# Install any needed packages specified in requirements.txt
-# Uncomment the next line if you have a requirements.txt file
+USER root
+WORKDIR /app
+COPY --from=builder /app/server ./
+COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Run zwickfi.py when the container launches
-EXPOSE 8080
-CMD ["python3.11", "app.py"]
+ENTRYPOINT "./server"
