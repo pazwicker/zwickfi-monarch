@@ -7,24 +7,29 @@ from dotenv import load_dotenv
 import asyncio
 import os
 from google.cloud import secretmanager
+from pathlib import Path
 
-load_dotenv()
-monarch_email = os.getenv("MONARCH_EMAIL")
-monarch_password = os.getenv("MONARCH_PASSWORD")
+# load_dotenv()
+# monarch_email = os.getenv("MONARCH_EMAIL")
+# monarch_password = os.getenv("MONARCH_PASSWORD")
+
 
 def access_secret_version(secret_name):
     client = secretmanager.SecretManagerServiceClient()
-    response = client.access_secret_version(name=secret_name)
-    return response.payload.data.decode('UTF-8')
+    name = client.secret_version_path(333216132519, secret_name, 1)
+    response = client.access_secret_version(name=name)
+    return response.payload.data.decode("UTF-8")
+
 
 def login():
     mm = MonarchMoney(timeout=30)
-    try:
-        asyncio.run(mm.login(monarch_email, monarch_password))
-    except:
-        gcp_monarch_email = access_secret_version('MONARCH_EMAIL')
-        gcp_monarch_password = access_secret_version('MONARCH_PASSWORD')
-        asyncio.run(mm.login(gcp_monarch_email, gcp_monarch_password))
+    root = Path(__file__).parent.parent.parent
+    relative_path = f"{root}/secrets/service-account-credentials.json"
+    absolute_path = os.path.abspath(relative_path)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = absolute_path
+    gcp_monarch_email = access_secret_version("MONARCH_EMAIL")
+    gcp_monarch_password = access_secret_version("MONARCH_PASSWORD")
+    asyncio.run(mm.login(gcp_monarch_email, gcp_monarch_password))
     return mm
 
 
