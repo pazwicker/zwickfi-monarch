@@ -6,6 +6,15 @@ import math
 
 class Transactions(object):
     def get_total_transactions(mm):
+        """
+        Retrieves the total number of transactions from the Monarch Money service.
+
+        Args:
+            mm (MonarchMoney): An authenticated MonarchMoney object.
+
+        Returns:
+            int: The total number of transactions.
+        """
         transactions_summary = asyncio.run(mm.get_transactions_summary())
         total_transactions = pd.json_normalize(
             transactions_summary["aggregates"][0]["summary"]
@@ -13,6 +22,16 @@ class Transactions(object):
         return total_transactions
 
     def get_transactions(mm, limit: Optional[int] = 1000):
+        """
+        Retrieves transactions from the Monarch Money service up to the specified limit.
+
+        Args:
+            mm (MonarchMoney): An authenticated MonarchMoney object.
+            limit (int, optional): The maximum number of transactions to retrieve. Defaults to 1000.
+
+        Returns:
+            pandas.DataFrame: A DataFrame containing transaction data.
+        """
         max_results = 1000
         if limit > max_results:
             iterations = math.ceil(limit / max_results)
@@ -35,12 +54,30 @@ class Transactions(object):
         return df
 
     def get_transaction_categories(mm):
+        """
+        Retrieves transaction categories from the Monarch Money service.
+
+        Args:
+            mm (MonarchMoney): An authenticated MonarchMoney object.
+
+        Returns:
+            pandas.DataFrame: A DataFrame containing transaction category data.
+        """
         categories = asyncio.run(mm.get_transaction_categories())
         df = pd.json_normalize(categories["categories"])
         df.columns = df.columns.str.replace(".", "_")
         return df
 
     def get_transaction_tags(mm):
+        """
+        Retrieves transaction tags from the Monarch Money service.
+
+        Args:
+            mm (MonarchMoney): An authenticated MonarchMoney object.
+
+        Returns:
+            pandas.DataFrame: A DataFrame containing transaction tag data.
+        """
         tags = asyncio.run(mm.get_transaction_tags())
         df = pd.json_normalize(tags["householdTransactionTags"])
         df.columns = df.columns.str.replace(".", "_")
