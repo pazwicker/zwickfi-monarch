@@ -5,6 +5,7 @@ from bigquery import BigQuery
 from monarchmoney import MonarchMoney
 import asyncio
 from google.cloud import secretmanager
+import pandas as pd
 
 gcp_project_id = 333216132519
 
@@ -55,9 +56,37 @@ def zwickfi():
     transaction_categories = monarch.Transactions.get_transaction_categories(mm)
     transaction_tags = monarch.Transactions.get_transaction_tags(mm)
 
+    # Pull account data sets from monarch
+    accounts = monarch.Accounts.get_accounts(mm)
+
+    # Pull account history for each account
+    account_ids = []
+
+    for account in accounts["accounts"]:
+        account_ids.append(account["id"])
+
+    account_history = pd.DataFrame()
+
+    for account_id in account_ids:
+        print(f"Getting account history for account ID {account_id}.")
+        account_history_temp = monarch.Accounts.get_account_history(mm, account_id)
+        account_history = pd.concat([account_history, account_history_temp])
+
     # Write monarch data to bigquery
-    tables = [transactions, transaction_categories, transaction_tags]
-    table_names = ["transactions", "transaction_categories", "transaction_tags"]
+    tables = [
+        transactions,
+        transaction_categories,
+        transaction_tags,
+        accounts,
+        account_history,
+    ]
+    table_names = [
+        "transactions",
+        "transaction_categories",
+        "transaction_tags",
+        "accounts",
+        "account_balance_history",
+    ]
 
     for i, table in enumerate(tables):
         table_name = table_names[i]

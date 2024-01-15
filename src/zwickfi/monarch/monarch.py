@@ -82,3 +82,17 @@ class Transactions(object):
         df = pd.json_normalize(tags["householdTransactionTags"])
         df.columns = df.columns.str.replace(".", "_")
         return df
+
+
+class Accounts(object):
+    def get_accounts(mm):
+        accounts = asyncio.run(mm.get_accounts)
+        df = pd.json_normalize(accounts["accounts"])
+        df.columns = df.columns.str.replace(".", "_")
+        return df
+
+    def get_account_history(mm, account_id):
+        account_history = asyncio.run(mm.get_account_history(account_id))
+        df = pd.json_normalize(account_history)
+        df.columns = df.columns.str.replace(".", "_")
+        return df
