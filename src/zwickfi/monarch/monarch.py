@@ -86,7 +86,7 @@ class Transactions(object):
 
 class Accounts(object):
     def get_accounts(mm):
-        accounts = asyncio.run(mm.get_accounts)
+        accounts = asyncio.run(mm.get_accounts())
         df = pd.json_normalize(accounts["accounts"])
         df.columns = df.columns.str.replace(".", "_")
         return df
