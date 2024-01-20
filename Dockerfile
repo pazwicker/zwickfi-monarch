@@ -8,6 +8,7 @@ USER root
 WORKDIR /app
 COPY --from=builder /app/server ./
 COPY . /app
+RUN apt-get update && apt-get install -y git
 RUN pip install --no-cache-dir -r requirements.txt
 
 ENTRYPOINT "./server"
