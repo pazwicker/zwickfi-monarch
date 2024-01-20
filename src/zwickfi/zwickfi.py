@@ -9,7 +9,6 @@ import pandas as pd
 
 gcp_project_id = 333216132519
 
-
 def access_secret_version(project_id, secret_name, version_number):
     """
     Access a specific version of a secret stored in Google Cloud Secret Manager.
