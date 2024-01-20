@@ -60,10 +60,7 @@ def zwickfi():
     accounts = monarch.Accounts.get_accounts(mm)
 
     # Pull account history for each account
-    account_ids = []
-
-    for account in accounts["accounts"]:
-        account_ids.append(account["id"])
+    account_ids = accounts['id'].tolist()
 
     account_history = pd.DataFrame()
 
