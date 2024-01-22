@@ -8,7 +8,8 @@ USER root
 WORKDIR /app
 COPY --from=builder /app/server ./
 COPY . /app
-RUN apt-get update && apt-get install -y make
+# RUN apt-get update && apt-get install -y make
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 ENTRYPOINT "./server"
