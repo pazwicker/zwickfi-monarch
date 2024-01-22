@@ -6,6 +6,7 @@ from monarchmoney import MonarchMoney
 import asyncio
 from google.cloud import secretmanager
 import pandas as pd
+from forecasts import Forecasts
 
 gcp_project_id = 333216132519
 
@@ -68,6 +69,10 @@ def zwickfi():
         account_history_temp = monarch.Accounts.get_account_history(mm, account_id)
         account_history = pd.concat([account_history, account_history_temp])
 
+    # Forecast credit card spending
+    forecast_data, credit_cards = Forecasts.get_forecast_data()
+    forecasts = Forecasts.get_forecasts(forecast_data, credit_cards)
+
     # Write monarch data to bigquery
     tables = [
         transactions,
@@ -75,6 +80,7 @@ def zwickfi():
         transaction_tags,
         accounts,
         account_history,
+        forecasts
     ]
     table_names = [
         "transactions",
@@ -82,11 +88,21 @@ def zwickfi():
         "transaction_tags",
         "accounts",
         "account_balance_history",
+        f"credit_card_forecast_{today}"
+    ]
+    schema_names = [
+        "monarchmoney",
+        "monarchmoney",
+        "monarchmoney",
+        "monarchmoney",
+        "monarchmoney",
+        "forecasts"
     ]
 
     for i, table in enumerate(tables):
         table_name = table_names[i]
-        BigQuery.write_to_bigquery(table, table_name)
+        schema_name = schema_names[i]
+        BigQuery.write_to_bigquery(table, schema_name, table_name)
 
 
 zwickfi()
