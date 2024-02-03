@@ -7,6 +7,14 @@ import asyncio
 from google.cloud import secretmanager
 import pandas as pd
 from forecasts import Forecasts
+from dotenv import load_dotenv
+import os
+from datetime import date
+
+load_dotenv()
+monarch_email = os.getenv("MONARCH_EMAIL")
+monarch_password = os.getenv("MONARCH_PASSWORD")
+today = date.today()
 
 gcp_project_id = 333216132519
 
@@ -35,10 +43,15 @@ def monarch_login():
     Returns:
         MonarchMoney: An authenticated MonarchMoney object.
     """
-    mm = MonarchMoney(timeout=30)
-    gcp_monarch_email = access_secret_version(gcp_project_id, "MONARCH_EMAIL", 1)
-    gcp_monarch_password = access_secret_version(gcp_project_id, "MONARCH_PASSWORD", 1)
-    asyncio.run(mm.login(gcp_monarch_email, gcp_monarch_password))
+    mm = MonarchMoney(timeout=60)
+    try:
+        gcp_monarch_email = access_secret_version(gcp_project_id, "MONARCH_EMAIL", 1)
+        gcp_monarch_password = access_secret_version(gcp_project_id, "MONARCH_PASSWORD", 1)
+        asyncio.run(mm.login(gcp_monarch_email, gcp_monarch_password))
+        print('pulled monarch secrets from google cloud.')
+    except:
+        asyncio.run(mm.login(monarch_email, monarch_password))
+        print('defaulted to monarch secrets in .env file.')
     return mm
 
 
@@ -49,6 +62,7 @@ def zwickfi():
     """
     # Log in to monarch
     mm = monarch_login()
+    print('logged into monarch.')
 
     # Pull transactional data sets from monarch
     total_transactions = monarch.Transactions.get_total_transactions(mm)
@@ -91,11 +105,11 @@ def zwickfi():
         f"credit_card_forecast_{today}"
     ]
     schema_names = [
-        "monarchmoney",
-        "monarchmoney",
-        "monarchmoney",
-        "monarchmoney",
-        "monarchmoney",
+        "monarch_money",
+        "monarch_money",
+        "monarch_money",
+        "monarch_money",
+        "monarch_money",
         "forecasts"
     ]
 
