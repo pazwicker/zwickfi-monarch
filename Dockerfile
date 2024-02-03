@@ -3,8 +3,8 @@ WORKDIR /app
 COPY invoke.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -v -o server
 
-FROM python:3.11-slim
-USER root
+FROM python:3.9
+# USER root
 WORKDIR /app
 COPY --from=builder /app/server ./
 COPY . /app
