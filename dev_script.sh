@@ -1,2 +1,2 @@
 #!/bin/sh
-python3.11 src/zwickfi/zwickfi.py
+python src/zwickfi/zwickfi.py
