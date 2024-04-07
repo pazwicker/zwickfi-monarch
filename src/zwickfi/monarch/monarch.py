@@ -94,5 +94,9 @@ class Accounts(object):
     def get_account_history(mm, account_id):
         account_history = asyncio.run(mm.get_account_history(account_id))
         df = pd.json_normalize(account_history)
-        df.columns = df.columns.str.replace(".", "_")
+        try:
+            df.columns = df.columns.str.replace(".", "_")
+        except:
+            # handles dataframes returned with no results
+            pass
         return df
