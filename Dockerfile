@@ -1,16 +1,17 @@
-FROM golang:1.13 as builder
-WORKDIR /app
-COPY invoke.go ./
-RUN CGO_ENABLED=0 GOOS=linux go build -v -o server
+# Use an official Python image as the base
+FROM python:3.10-slim
 
-FROM python:3.9
-# USER root
+# Set the working directory
 WORKDIR /app
-COPY --from=builder /app/server ./
-COPY . /app
-# RUN apt-get update && apt-get install -y make
-RUN pip install --upgrade pip
+
+# Copy only the necessary files to leverage Docker's cache
+COPY requirements.txt ./
+
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install pandas
 
-ENTRYPOINT "./server"
+# Copy the entire project to the container
+COPY . .
+
+# Set the entrypoint command to run the script
+ENTRYPOINT ["/bin/sh", "-c", "python src/zwickfi/zwickfi.py"]
