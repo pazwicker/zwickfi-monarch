@@ -2,7 +2,7 @@ from google.cloud import bigquery
 
 
 class BigQuery(object):
-    def write_to_bigquery(df, schema, tablename):
+    def write_to_bigquery(df, schema, tablename, client):
         """
         Writes the given DataFrame to a BigQuery table, truncating the existing table.
 
@@ -20,7 +20,6 @@ class BigQuery(object):
 
         """
         table_id = f"zwickfi.{schema}.{tablename}"
-        client = bigquery.Client()
         job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
         job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
         job.result()  # Waits for the job to complete

@@ -4,73 +4,130 @@ from monarch import monarch
 from bigquery import BigQuery
 from monarchmoney import MonarchMoney
 import asyncio
-from google.cloud import secretmanager
+import os
 import pandas as pd
 from forecasts import Forecasts
 from dotenv import load_dotenv
-import os
 from datetime import date
+from google.oauth2 import service_account
+from google.cloud import bigquery
 
+# Load environment variables
 load_dotenv()
-monarch_email = os.getenv("MONARCH_EMAIL")
-monarch_password = os.getenv("MONARCH_PASSWORD")
+
+# Set up global variables
 today = date.today()
 
-gcp_project_id = 333216132519
-
-def access_secret_version(project_id, secret_name, version_number):
+def get_project_root():
     """
-    Access a specific version of a secret stored in Google Cloud Secret Manager.
+    Returns the root directory of the project.
+    """
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+def load_secrets_from_file(secrets_file_path):
+    """
+    Load secrets from a local file in the /secrets folder.
 
     Args:
-        project_id (int): Google Cloud project ID.
-        secret_name (str): Name of the secret to access.
-        version_number (int or str): Version number of the secret.
+        secrets_file_path (str): Path to the secrets file.
 
     Returns:
-        str: The secret's value as a string.
+        dict: A dictionary containing the secrets.
     """
-    client = secretmanager.SecretManagerServiceClient()
-    name = client.secret_version_path(project_id, secret_name, version_number)
-    response = client.access_secret_version(name=name)
-    return response.payload.data.decode("UTF-8")
+    secrets = {}
+    try:
+        with open(secrets_file_path, 'r') as file:
+            for line in file:
+                # Split the line into key and value
+                if '=' in line:
+                    key, value = line.strip().split('=', 1)
+                    secrets[key] = value
+    except FileNotFoundError:
+        print(f"Secrets file not found: {secrets_file_path}")
+    return secrets
 
 
 def monarch_login():
     """
-    Logs in to the Monarch Money service using credentials stored in Secret Manager.
+    Logs in to the Monarch Money service using credentials stored in a secrets file.
 
     Returns:
         MonarchMoney: An authenticated MonarchMoney object.
     """
     mm = MonarchMoney(timeout=60)
+    
+    # Determine the root directory of the project
+    project_root = get_project_root()
+    
+    # Path to the local secrets file relative to the project root
+    secrets_file_path = os.path.join(project_root, "secrets", "monarch_secrets.env")
+    
+    # Load secrets from the local file
+    secrets = load_secrets_from_file(secrets_file_path)
+    monarch_email = secrets.get("MONARCH_EMAIL")
+    monarch_password = secrets.get("MONARCH_PASSWORD")
+    
+    if not monarch_email or not monarch_password:
+        raise ValueError("MONARCH_EMAIL or MONARCH_PASSWORD not found in secrets file.")
+    
     try:
-        gcp_monarch_email = access_secret_version(gcp_project_id, "MONARCH_EMAIL", 1)
-        gcp_monarch_password = access_secret_version(gcp_project_id, "MONARCH_PASSWORD", 1)
-        asyncio.run(mm.login(gcp_monarch_email, gcp_monarch_password))
-        print('pulled monarch secrets from google cloud.')
-    except:
         asyncio.run(mm.login(monarch_email, monarch_password))
-        print('defaulted to monarch secrets in .env file.')
+        print("Logged in to Monarch Money using local secrets file.")
+    except Exception as e:
+        print(f"Failed to log in to Monarch Money: {e}")
     return mm
 
+
+def authenticate_with_google_cloud():
+    """
+    Authenticates with Google Cloud using a service account file.
+
+    Returns:
+        bigquery.Client: An authenticated BigQuery client.
+    """
+    # Determine the root directory of the project
+    project_root = get_project_root()
+    
+    # Path to the service account file relative to the project root
+    service_account_file = os.path.join(project_root, "secrets", "service_account.json")
+    
+    # Check if the service account file exists
+    if not os.path.exists(service_account_file):
+        raise FileNotFoundError(f"Service account file not found: {service_account_file}")
+    
+    # Authenticate using the service account file
+    credentials = service_account.Credentials.from_service_account_file(service_account_file)
+    
+    # Create a BigQuery client
+    client = bigquery.Client(credentials=credentials, project=credentials.project_id)
+    
+    print("Authenticated with Google Cloud using service account file.")
+    return client
 
 def zwickfi():
     """
     Main function to handle the process of logging in to Monarch, retrieving transactions,
     categories, and tags, and then writing this data to BigQuery tables.
     """
-    # Log in to monarch
-    mm = monarch_login()
-    print('logged into monarch.')
+    try:
+        # Authenticate with Google Cloud
+        bq_client = authenticate_with_google_cloud()
+        print('Authenticated with Google Cloud.')
+    except Exception as e:
+        print(f"Failed to authenticate with Google Cloud: {e}")
+        return
 
-    # Pull transactional data sets from monarch
+    # Log in to Monarch
+    mm = monarch_login()
+    print('Logged into Monarch.')
+
+    # Pull transactional data sets from Monarch
     total_transactions = monarch.Transactions.get_total_transactions(mm)
     transactions = monarch.Transactions.get_transactions(mm, limit=total_transactions)
     transaction_categories = monarch.Transactions.get_transaction_categories(mm)
     transaction_tags = monarch.Transactions.get_transaction_tags(mm)
 
-    # Pull account data sets from monarch
+    # Pull account data sets from Monarch
     accounts = monarch.Accounts.get_accounts(mm)
 
     # Pull account history for each account
@@ -83,10 +140,12 @@ def zwickfi():
         account_history_temp = monarch.Accounts.get_account_history(mm, account_id)
         account_history = pd.concat([account_history, account_history_temp])
 
-    # Forecast credit card spending
-    forecast_data, credit_cards = Forecasts.get_forecast_data()
-    forecasts = Forecasts.get_forecasts(forecast_data, credit_cards)
+    # Forecast credit card spending using the updated Forecasts class
+    forecasts_instance = Forecasts(bq_client)
+    forecast_data, credit_cards = forecasts_instance.get_forecast_data()
+    forecasts = forecasts_instance.get_forecasts(forecast_data, credit_cards)
 
+    # Write Monarch data to BigQuery
     # Write monarch data to bigquery
     tables = [
         transactions,
@@ -116,7 +175,7 @@ def zwickfi():
     for i, table in enumerate(tables):
         table_name = table_names[i]
         schema_name = schema_names[i]
-        BigQuery.write_to_bigquery(table, schema_name, table_name)
+        BigQuery.write_to_bigquery(table, schema_name, table_name, bq_client)
 
 
 zwickfi()
