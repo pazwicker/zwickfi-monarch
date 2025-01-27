@@ -1,20 +1,39 @@
-  steps:
-  # Build the container image
+steps:
+  # Build the container image with both :latest and :$COMMIT_SHA tags
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/zwickfi/zwickfi-monarch:$COMMIT_SHA', '.']
-  # Push the container image to Container Registry
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/zwickfi/zwickfi-monarch:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/zwickfi/zwickfi-monarch:latest'
+      - '.'
+
+  # Push the container image with :$COMMIT_SHA tag
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/zwickfi/zwickfi-monarch:$COMMIT_SHA']
-  # Deploy container image to Cloud Run
+    args:
+      - 'push'
+      - 'gcr.io/zwickfi/zwickfi-monarch:$COMMIT_SHA'
+
+  # Push the container image with :latest tag
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/zwickfi/zwickfi-monarch:latest'
+
+  # Deploy container image to Cloud Run using the :latest tag
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
-    - 'run'
-    - 'deploy'
-    - 'zwickfi'
-    - '--image'
-    - 'gcr.io/zwickfi/zwickfi-monarch:$COMMIT_SHA'
-    - '--region'
-    - 'us-central1'
-  images:
+      - 'run'
+      - 'deploy'
+      - 'zwickfi'
+      - '--image'
+      - 'gcr.io/zwickfi/zwickfi-monarch:latest'
+      - '--region'
+      - 'us-central1'
+
+images:
   - 'gcr.io/zwickfi/zwickfi-monarch:$COMMIT_SHA'
+  - 'gcr.io/zwickfi/zwickfi-monarch:latest'
+  
