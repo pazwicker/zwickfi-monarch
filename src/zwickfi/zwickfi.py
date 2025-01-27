@@ -12,97 +12,92 @@ from datetime import date
 from google.oauth2 import service_account
 from google.cloud import bigquery
 
-# Load environment variables
-load_dotenv()
-
 # Set up global variables
 today = date.today()
-
-def get_project_root():
-    """
-    Returns the root directory of the project.
-    """
-    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-def load_secrets_from_file(secrets_file_path):
-    """
-    Load secrets from a local file in the /secrets folder.
-
-    Args:
-        secrets_file_path (str): Path to the secrets file.
-
-    Returns:
-        dict: A dictionary containing the secrets.
-    """
-    secrets = {}
-    try:
-        with open(secrets_file_path, 'r') as file:
-            for line in file:
-                # Split the line into key and value
-                if '=' in line:
-                    key, value = line.strip().split('=', 1)
-                    secrets[key] = value
-    except FileNotFoundError:
-        print(f"Secrets file not found: {secrets_file_path}")
-    return secrets
 
 
 def monarch_login():
     """
-    Logs in to the Monarch Money service using credentials stored in a secrets file.
+    Logs in to the Monarch Money service using credentials from environment variables.
+    If the environment variables are not set, prompts the user to enter them.
 
     Returns:
         MonarchMoney: An authenticated MonarchMoney object.
     """
     mm = MonarchMoney(timeout=60)
-    
-    # Determine the root directory of the project
-    project_root = get_project_root()
-    
-    # Path to the local secrets file relative to the project root
-    secrets_file_path = os.path.join(project_root, "secrets", "monarch_secrets.env")
-    
-    # Load secrets from the local file
-    secrets = load_secrets_from_file(secrets_file_path)
-    monarch_email = secrets.get("MONARCH_EMAIL")
-    monarch_password = secrets.get("MONARCH_PASSWORD")
-    
-    if not monarch_email or not monarch_password:
-        raise ValueError("MONARCH_EMAIL or MONARCH_PASSWORD not found in secrets file.")
-    
+
+    # Attempt to retrieve credentials from environment variables
+    monarch_email = os.getenv("MONARCH_EMAIL")
+    monarch_password = os.getenv("MONARCH_PASSWORD")
+
+    # Prompt the user if environment variables are not set
+    if not monarch_email:
+        monarch_email = input(
+            "The environment variable 'MONARCH_EMAIL' is not set.\n"
+            "Please enter your Monarch Money email: "
+        ).strip()
+        while not monarch_email:
+            monarch_email = input(
+                "Email cannot be empty. Please enter your Monarch Money email: "
+            ).strip()
+
+    if not monarch_password:
+        monarch_password = input(
+            "The environment variable 'MONARCH_PASSWORD' is not set.\n"
+            "Please enter your Monarch Money password: "
+        ).strip()
+        while not monarch_password:
+            monarch_password = input(
+                "Password cannot be empty. Please enter your Monarch Money password: "
+            ).strip()
+
+    # Attempt to log in with the provided credentials
     try:
         asyncio.run(mm.login(monarch_email, monarch_password))
-        print("Logged in to Monarch Money using local secrets file.")
+        print("Successfully logged in to Monarch Money.")
     except Exception as e:
         print(f"Failed to log in to Monarch Money: {e}")
+        raise
+
     return mm
 
 
 def authenticate_with_google_cloud():
     """
-    Authenticates with Google Cloud using a service account file.
+    Authenticates with Google Cloud using a service account file specified by
+    the GOOGLE_APPLICATION_CREDENTIALS environment variable. Prompts the user
+    to provide the path if the variable is not set.
 
     Returns:
         bigquery.Client: An authenticated BigQuery client.
     """
-    # Determine the root directory of the project
-    project_root = get_project_root()
-    
-    # Path to the service account file relative to the project root
-    service_account_file = os.path.join(project_root, "secrets", "service_account.json")
-    
-    # Check if the service account file exists
-    if not os.path.exists(service_account_file):
-        raise FileNotFoundError(f"Service account file not found: {service_account_file}")
-    
+    # Check if the environment variable is set
+    service_account_file = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
+    if not service_account_file:
+        # Prompt the user for the path if the variable is not set
+        service_account_file = input(
+            "The environment variable 'GOOGLE_APPLICATION_CREDENTIALS' is not set.\n"
+            "Please provide the full path to your service_account.json file: "
+        )
+        # Validate the user-provided path
+        if not os.path.exists(service_account_file):
+            raise FileNotFoundError(
+                f"Service account file not found: {service_account_file}"
+            )
+
+        # Optionally, set the environment variable for future use in this session
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = service_account_file
+
     # Authenticate using the service account file
-    credentials = service_account.Credentials.from_service_account_file(service_account_file)
-    
-    # Create a BigQuery client
+    credentials = service_account.Credentials.from_service_account_file(
+        service_account_file
+    )
     client = bigquery.Client(credentials=credentials, project=credentials.project_id)
-    
+
     print("Authenticated with Google Cloud using service account file.")
     return client
+
 
 def zwickfi():
     """
@@ -112,14 +107,14 @@ def zwickfi():
     try:
         # Authenticate with Google Cloud
         bq_client = authenticate_with_google_cloud()
-        print('Authenticated with Google Cloud.')
+        print("Authenticated with Google Cloud.")
     except Exception as e:
         print(f"Failed to authenticate with Google Cloud: {e}")
         return
 
     # Log in to Monarch
     mm = monarch_login()
-    print('Logged into Monarch.')
+    print("Logged into Monarch.")
 
     # Pull transactional data sets from Monarch
     total_transactions = monarch.Transactions.get_total_transactions(mm)
@@ -131,7 +126,7 @@ def zwickfi():
     accounts = monarch.Accounts.get_accounts(mm)
 
     # Pull account history for each account
-    account_ids = accounts['id'].tolist()
+    account_ids = accounts["id"].tolist()
 
     account_history = pd.DataFrame()
 
@@ -146,14 +141,13 @@ def zwickfi():
     forecasts = forecasts_instance.get_forecasts(forecast_data, credit_cards)
 
     # Write Monarch data to BigQuery
-    # Write monarch data to bigquery
     tables = [
         transactions,
         transaction_categories,
         transaction_tags,
         accounts,
         account_history,
-        forecasts
+        forecasts,
     ]
     table_names = [
         "transactions",
@@ -161,7 +155,7 @@ def zwickfi():
         "transaction_tags",
         "accounts",
         "account_balance_history",
-        f"credit_card_forecast_{today}"
+        f"credit_card_forecast_{today}",
     ]
     schema_names = [
         "monarch_money",
@@ -169,7 +163,7 @@ def zwickfi():
         "monarch_money",
         "monarch_money",
         "monarch_money",
-        "forecasts"
+        "forecasts",
     ]
 
     for i, table in enumerate(tables):
