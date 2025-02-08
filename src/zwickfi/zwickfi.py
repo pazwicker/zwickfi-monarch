@@ -2,12 +2,11 @@
 
 from monarch import monarch
 from bigquery import BigQuery
-from monarchmoney import MonarchMoney
+from monarchmoney import MonarchMoney, RequireMFAException
 import asyncio
 import os
 import pandas as pd
 from forecasts import Forecasts
-from dotenv import load_dotenv
 from datetime import date
 from google.oauth2 import service_account
 from google.cloud import bigquery
@@ -29,6 +28,7 @@ def monarch_login():
     # Attempt to retrieve credentials from environment variables
     monarch_email = os.getenv("MONARCH_EMAIL")
     monarch_password = os.getenv("MONARCH_PASSWORD")
+    monarch_secret_key = os.getenv("MONARCH_SECRET_KEY")
 
     # Prompt the user if environment variables are not set
     if not monarch_email:
@@ -51,9 +51,27 @@ def monarch_login():
                 "Password cannot be empty. Please enter your Monarch Money password: "
             ).strip()
 
+    if not monarch_secret_key:
+        monarch_secret_key = input(
+            "The environment variable 'MONARCH_SECRET_KEY' is not set.\n"
+            "Please enter your Monarch Money secret key: "
+        ).strip()
+        while not monarch_secret_key:
+            monarch_secret_key = input(
+                "Secret key cannot be empty. Please enter your Monarch Money secret key: "
+            ).strip()
+
     # Attempt to log in with the provided credentials
     try:
-        asyncio.run(mm.login(monarch_email, monarch_password))
+        asyncio.run(
+            mm.login(
+                email=monarch_email,
+                password=monarch_password,
+                save_session=False,
+                use_saved_session=False,
+                mfa_secret_key=monarch_secret_key,
+            )
+        )
         print("Successfully logged in to Monarch Money.")
     except Exception as e:
         print(f"Failed to log in to Monarch Money: {e}")
