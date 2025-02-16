@@ -9,17 +9,11 @@ steps:
       - 'gcr.io/zwickfi/zwickfi-monarch:latest'
       - '.'
 
-  # Push the container image with :$COMMIT_SHA tag
+  # Push both tags in a single step
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'gcr.io/zwickfi/zwickfi-monarch:$COMMIT_SHA'
-
-  # Push the container image with :latest tag
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'push'
-      - 'gcr.io/zwickfi/zwickfi-monarch:latest'
+      - 'gcr.io/zwickfi/zwickfi-monarch'
 
   # Deploy container image to Cloud Run using the :latest tag
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -32,8 +26,10 @@ steps:
       - 'gcr.io/zwickfi/zwickfi-monarch:latest'
       - '--region'
       - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
 
 images:
   - 'gcr.io/zwickfi/zwickfi-monarch:$COMMIT_SHA'
   - 'gcr.io/zwickfi/zwickfi-monarch:latest'
-  
