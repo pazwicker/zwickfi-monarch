@@ -27,8 +27,6 @@ steps:
       - 'gcr.io/zwickfi/zwickfi-monarch:latest'
       - '--region'
       - 'us-central1'
-      - '--platform'
-      - 'managed'
       - '--task-timeout=600s'
       - '--max-retries=3'
       - '--cpu=4'
