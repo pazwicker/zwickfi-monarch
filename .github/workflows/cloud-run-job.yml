@@ -1,0 +1,69 @@
+name: Build & Deploy Cloud Run Job
+
+on:
+  pull_request:
+    branches:
+      - main  # Runs on PRs to main
+  push:
+    branches:
+      - main  # Deploys only when merging to main
+
+jobs:
+  build:
+    name: Build and Push to Google Cloud
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Configure Docker for Google Cloud
+        run: gcloud auth configure-docker gcr.io --quiet
+
+      - name: Build the Docker image
+        run: |
+          docker build -t gcr.io/zwickfi/zwickfi-monarch:${{ github.sha }} .
+          docker tag gcr.io/zwickfi/zwickfi-monarch:${{ github.sha }} gcr.io/zwickfi/zwickfi-monarch:latest
+
+      - name: Push Docker image to Google Cloud
+        run: |
+          docker push gcr.io/zwickfi/zwickfi-monarch:${{ github.sha }}
+          docker push gcr.io/zwickfi/zwickfi-monarch:latest
+
+  deploy:
+    name: Deploy Cloud Run Job
+    needs: build  # Only runs after a successful build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'  # Only deploy when merging to main
+
+    steps:
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Deploy Cloud Run Job
+        run: |
+          gcloud run jobs deploy zwickfi-monarch \
+            --image gcr.io/zwickfi/zwickfi-monarch:latest \
+            --region us-central1 \
+            --platform managed \
+            --task-timeout=600s \
+            --max-retries=3 \
+            --cpu=4 \
+            --memory=2Gi \
+            --set-env-vars=GOOGLE_APPLICATION_CREDENTIALS=/secrets/service_account.json \
+            --set-secrets=MONARCH_EMAIL=MONARCH_EMAIL:latest \
+            --set-secrets=MONARCH_PASSWORD=MONARCH_PASSWORD:latest \
+            --set-secrets=MONARCH_SECRET_KEY=MONARCH_SECRET_KEY:latest \
+            --set-secrets=/secrets/service_account.json=service-account-monarch:latest \
+            --service-account=zwickfi-app@zwickfi.iam.gserviceaccount.com \
+            --vpc-connector=projects/zwickfi/locations/us-central1/connectors/default

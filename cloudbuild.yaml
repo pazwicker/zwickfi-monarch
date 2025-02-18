@@ -15,24 +15,30 @@ steps:
       - 'push'
       - 'gcr.io/zwickfi/zwickfi-monarch'
 
-    # Deploy the container as a Cloud Run Job instead of a service
+  # Deploy the container as a Cloud Run Job instead of a service
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
       - 'run'
       - 'jobs'
       - 'deploy'
-      - 'zwickfi-job'  # Change name to avoid conflict with service
+      - 'zwickfi-monarch'  # Match YAML job name
       - '--image'
       - 'gcr.io/zwickfi/zwickfi-monarch:latest'
       - '--region'
       - 'us-central1'
       - '--platform'
       - 'managed'
-      - '--task-timeout'
-      - '600s'  # Adjust timeout if needed
-      - '--max-retries'
-      - '3'
+      - '--task-timeout=600s'
+      - '--max-retries=3'
+      - '--cpu=4'
+      - '--memory=2Gi'
+      - '--set-env-vars=GOOGLE_APPLICATION_CREDENTIALS=/secrets/service_account.json'
+      - '--set-secrets=MONARCH_EMAIL=MONARCH_EMAIL:latest'
+      - '--set-secrets=MONARCH_PASSWORD=MONARCH_PASSWORD:latest'
+      - '--set-secrets=MONARCH_SECRET_KEY=MONARCH_SECRET_KEY:latest'
+      - '--set-secrets=/secrets/service_account.json=service-account-monarch:latest'
+      - '--service-account=zwickfi-app@zwickfi.iam.gserviceaccount.com'
 
 images:
   - 'gcr.io/zwickfi/zwickfi-monarch:$COMMIT_SHA'
