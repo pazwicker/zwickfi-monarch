@@ -3,14 +3,10 @@ name: Build & Deploy Cloud Run Job
 on:
   pull_request:
     branches:
-      - main
+      - main  # Runs on PRs to main
   push:
     branches:
-      - main
-  workflow_run:
-    workflows: ["Build & Deploy Cloud Run Job"]
-    types:
-      - completed
+      - main  # Deploys only when merging to main
 
 jobs:
   build:
@@ -46,7 +42,7 @@ jobs:
     name: Deploy Cloud Run Job
     needs: build  # Only runs after a successful build
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'  # Only deploy when merging to main
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'  # Only deploy after merging
 
     steps:
       - name: Authenticate with Google Cloud
@@ -59,7 +55,6 @@ jobs:
           gcloud run jobs deploy zwickfi-monarch \
             --image gcr.io/zwickfi/zwickfi-monarch:latest \
             --region us-central1 \
-            --platform managed \
             --task-timeout=600s \
             --max-retries=3 \
             --cpu=4 \
