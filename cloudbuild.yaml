@@ -15,20 +15,24 @@ steps:
       - 'push'
       - 'gcr.io/zwickfi/zwickfi-monarch'
 
-  # Deploy container image to Cloud Run using the :latest tag
+    # Deploy the container as a Cloud Run Job instead of a service
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
       - 'run'
+      - 'jobs'
       - 'deploy'
-      - 'zwickfi'
+      - 'zwickfi-job'  # Change name to avoid conflict with service
       - '--image'
       - 'gcr.io/zwickfi/zwickfi-monarch:latest'
       - '--region'
       - 'us-central1'
       - '--platform'
       - 'managed'
-      - '--allow-unauthenticated'
+      - '--task-timeout'
+      - '600s'  # Adjust timeout if needed
+      - '--max-retries'
+      - '3'
 
 images:
   - 'gcr.io/zwickfi/zwickfi-monarch:$COMMIT_SHA'
