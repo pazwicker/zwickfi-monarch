@@ -13,11 +13,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the entire project to the container
 COPY . .
 
-# Expose port 8080 for Cloud Run
-EXPOSE 8080
-
-# Set PORT environment variable
-ENV PORT=8080
-
 # Set the entrypoint command to run the script
 ENTRYPOINT ["python", "src/zwickfi/zwickfi.py"]
