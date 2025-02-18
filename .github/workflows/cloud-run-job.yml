@@ -3,10 +3,14 @@ name: Build & Deploy Cloud Run Job
 on:
   pull_request:
     branches:
-      - main  # Runs on PRs to main
+      - main
   push:
     branches:
-      - main  # Deploys only when merging to main
+      - main
+  workflow_run:
+    workflows: ["Build & Deploy Cloud Run Job"]
+    types:
+      - completed
 
 jobs:
   build:
