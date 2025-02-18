@@ -70,4 +70,3 @@ jobs:
             --set-secrets=MONARCH_SECRET_KEY=MONARCH_SECRET_KEY:latest \
             --set-secrets=/secrets/service_account.json=service-account-monarch:latest \
             --service-account=zwickfi-app@zwickfi.iam.gserviceaccount.com \
-            --vpc-connector=projects/zwickfi/locations/us-central1/connectors/default
