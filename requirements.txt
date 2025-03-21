@@ -112,7 +112,7 @@ tzdata==2023.4
 uritemplate==4.1.1
 urllib3==2.1.0
 wcwidth==0.2.13
-Werkzeug==3.0.1
+Werkzeug==3.0.6
 widgetsnbextension==4.0.13
 yarl==1.9.4
 zipp==3.20.2
