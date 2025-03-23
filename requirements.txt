@@ -3,7 +3,7 @@ pandas>=2.1.0
 prophet>=1.1.0
 numpy>=1.26.0
 matplotlib>=3.8.0
-db-types
+db-dtypes
 
 # Google Cloud dependencies
 google-cloud-bigquery>=3.14.0
