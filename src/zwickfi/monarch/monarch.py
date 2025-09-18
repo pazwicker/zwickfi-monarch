@@ -15,10 +15,9 @@ class Transactions(object):
         Returns:
             int: The total number of transactions.
         """
-        transactions_summary = asyncio.run(mm.get_transactions_summary())
-        total_transactions = pd.json_normalize(
-            transactions_summary["aggregates"][0]["summary"]
-        )["count"].iloc[0]
+        transactions_list_dashboard = asyncio.run(mm.get_transactions_list_dashboard())
+        total_transactions = transactions_list_dashboard[0]['summary']['count']
+        print(f"Total transactions: {total_transactions}")
         return total_transactions
 
     def get_transactions(mm, limit: Optional[int] = 1000):
