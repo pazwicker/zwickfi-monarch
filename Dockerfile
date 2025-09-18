@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y git && apt-get clean
 WORKDIR /app
 
 # Copy the requirements file
-COPY requirements.txt .
+COPY requirements.txt ./
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
@@ -17,4 +17,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Set the entrypoint (if applicable)
-CMD ["python", "main.py"]
+ENTRYPOINT ["python", "src/zwickfi/zwickfi.py"]

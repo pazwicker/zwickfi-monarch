@@ -11,7 +11,7 @@ google-auth>=2.26.0
 google-cloud-core>=2.4.0
 
 # Monarch Money API client
-git+https://github.com/keithah/monarchmoney-enhanced.git@main#egg=monarchmoney-enhanced
+monarchmoney-enhanced>=0.9.9
 
 # Async dependencies
 asyncio>=3.4.3
