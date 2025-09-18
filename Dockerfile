@@ -1,17 +1,20 @@
-# Use an official Python image as the base
-FROM python:3.10-slim
+# Use a base image
+FROM python:3.11-slim
+
+# Install system dependencies, including git
+RUN apt-get update && apt-get install -y git && apt-get clean
 
 # Set the working directory
 WORKDIR /app
 
-# Copy only the necessary files to leverage Docker's cache
-COPY requirements.txt ./
+# Copy the requirements file
+COPY requirements.txt .
 
-# Install dependencies
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire project to the container
+# Copy the rest of the application code
 COPY . .
 
-# Set the entrypoint command to run the script
-ENTRYPOINT ["python", "src/zwickfi/zwickfi.py"]
+# Set the entrypoint (if applicable)
+CMD ["python", "main.py"]
