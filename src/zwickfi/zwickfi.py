@@ -143,6 +143,9 @@ def zwickfi():
     # Pull account data sets from Monarch
     accounts = monarch.Accounts.get_accounts(mm)
 
+    # Pull budget data from Monarch
+    budgets = monarch.Budgets.get_budgets(mm)
+
     # Pull account history for each account
     account_ids = accounts["id"].tolist()
 
@@ -164,6 +167,7 @@ def zwickfi():
         transaction_categories,
         transaction_tags,
         accounts,
+        budgets,
         account_history,
         forecasts,
     ]
@@ -172,10 +176,12 @@ def zwickfi():
         "transaction_categories",
         "transaction_tags",
         "accounts",
+        "budgets",
         "account_balance_history",
         f"credit_card_forecast_{today}",
     ]
     schema_names = [
+        "monarch_money",
         "monarch_money",
         "monarch_money",
         "monarch_money",
