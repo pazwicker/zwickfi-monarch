@@ -99,3 +99,22 @@ class Accounts(object):
             # handles dataframes returned with no results
             pass
         return df
+
+
+class Budgets(object):
+    def get_budgets(mm, start_date: Optional[str] = None, end_date: Optional[str] = None):
+        """
+        Retrieves budget data from the Monarch Money service.
+
+        Args:
+            mm (MonarchMoney): An authenticated MonarchMoney object.
+            start_date (str, optional): Start date in "yyyy-mm-dd" format.
+            end_date (str, optional): End date in "yyyy-mm-dd" format.
+
+        Returns:
+            pandas.DataFrame: A DataFrame containing budget data.
+        """
+        budgets = asyncio.run(mm.get_budgets(start_date=start_date, end_date=end_date))
+        df = pd.json_normalize(budgets)
+        df.columns = df.columns.str.replace(".", "_")
+        return df
