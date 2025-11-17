@@ -12,6 +12,9 @@ google-cloud-core>=2.4.0
 
 # Monarch Money API client
 monarchmoney-enhanced>=0.11.0
+# Pin gql to 3.x to maintain compatibility with monarchmoney-enhanced
+# (v4.x has breaking changes to AIOHTTPTransport API)
+gql>=3.4.0,<4.0.0
 
 # Async dependencies
 asyncio>=3.4.3
