@@ -11,10 +11,10 @@ google-auth>=2.26.0
 google-cloud-core>=2.4.0
 
 # Monarch Money API client
-monarchmoney-enhanced>=0.11.0
-# Pin gql to 3.x to maintain compatibility with monarchmoney-enhanced
-# (v4.x has breaking changes to AIOHTTPTransport API)
-gql>=3.4.0,<4.0.0
+# Pin to v0.10.0 due to bug in v0.11.0 where connector parameter
+# is incorrectly passed directly to AIOHTTPTransport instead of via client_session_args
+monarchmoney-enhanced==0.10.0
+gql>=3.4.0
 
 # Async dependencies
 asyncio>=3.4.3
