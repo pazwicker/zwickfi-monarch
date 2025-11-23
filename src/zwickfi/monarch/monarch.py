@@ -1,5 +1,6 @@
 import pandas as pd
 import asyncio
+from datetime import datetime
 from typing import Optional
 import math
 
@@ -114,7 +115,9 @@ class Budgets(object):
         Returns:
             pandas.DataFrame: A DataFrame containing budget data.
         """
+        synced_at = datetime.now()
         budgets = asyncio.run(mm.get_budgets(start_date=start_date, end_date=end_date))
         df = pd.json_normalize(budgets)
         df.columns = df.columns.str.replace(".", "_")
+        df["synced_at"] = synced_at
         return df
