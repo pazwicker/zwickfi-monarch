@@ -9,6 +9,7 @@ db-dtypes
 google-cloud-bigquery>=3.14.0
 google-auth>=2.26.0
 google-cloud-core>=2.4.0
+pandas-gbq>=0.26.1
 
 # Monarch Money API client
 # Pin to v0.10.0 due to bug in v0.11.0 where connector parameter
