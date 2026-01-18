@@ -21,7 +21,7 @@ def get_total_transactions(mm: MonarchMoney) -> int:
         Total transaction count.
     """
     summary = asyncio.run(mm.get_transactions_summary())
-    total = summary["aggregates"]["summary"]["count"]
+    total = summary["aggregates"][0]["summary"]["count"]
     print(f"Total transactions: {total}")
     return total
 

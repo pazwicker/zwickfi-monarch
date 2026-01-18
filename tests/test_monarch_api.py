@@ -31,9 +31,11 @@ class TestTransactionsMethods:
         )
 
         assert "aggregates" in summary
-        assert "summary" in summary["aggregates"]
-        assert "count" in summary["aggregates"]["summary"]
-        assert isinstance(summary["aggregates"]["summary"]["count"], int)
+        assert isinstance(summary["aggregates"], list)
+        assert len(summary["aggregates"]) > 0
+        assert "summary" in summary["aggregates"][0]
+        assert "count" in summary["aggregates"][0]["summary"]
+        assert isinstance(summary["aggregates"][0]["summary"]["count"], int)
 
     def test_get_transactions(self, monarch_client, event_loop):
         """Test get_transactions returns expected structure."""
