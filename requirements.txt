@@ -12,9 +12,9 @@ google-cloud-core>=2.4.0
 pandas-gbq>=0.26.1
 
 # Monarch Money API client
-# Pin to v0.10.0 due to bug in v0.11.0 where connector parameter
-# is incorrectly passed directly to AIOHTTPTransport instead of via client_session_args
-monarchmoney-enhanced==0.10.0
+# Using community fork that supports new api.monarch.com endpoint
+# (monarchmoney-enhanced doesn't support the January 2026 domain change)
+monarchmoneycommunity>=1.1.0
 gql>=3.4.0
 
 # Async dependencies
