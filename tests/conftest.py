@@ -3,9 +3,15 @@
 import asyncio
 import os
 import sys
+from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 from monarchmoney import MonarchMoney
+
+# Load .env file from project root
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(env_path)
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
