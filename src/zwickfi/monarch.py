@@ -124,7 +124,17 @@ def get_budgets(
     end_date: str | None = None,
 ) -> pd.DataFrame:
     """
-    Retrieve budget data.
+    Retrieve budget data with enriched category information.
+
+    The Monarch Money API returns a deeply nested structure with:
+    - budgetData.monthlyAmountsByCategory: per-category monthly budget amounts
+    - budgetData.totalsByMonth: aggregate monthly totals
+    - categoryGroups: category definitions with detailed fields
+    - goalsV2: financial goals
+
+    This function enriches monthlyAmountsByCategory with full category info
+    from categoryGroups (icon, excludeFromBudget, isSystemCategory, group info,
+    rolloverPeriod, etc.) to ensure all fields are available in BigQuery.
 
     Args:
         mm: Authenticated MonarchMoney client.
@@ -132,10 +142,48 @@ def get_budgets(
         end_date: End date in "yyyy-mm-dd" format.
 
     Returns:
-        DataFrame containing budget data with synced_at timestamp.
+        DataFrame containing enriched budget data with synced_at timestamp.
     """
     synced_at = datetime.now()
     budgets = asyncio.run(mm.get_budgets(start_date=start_date, end_date=end_date))
-    df = json_to_dataframe(budgets)
+
+    # Build a lookup table from categoryGroups for full category details
+    category_lookup = {}
+    if "categoryGroups" in budgets:
+        for group in budgets["categoryGroups"]:
+            group_info = {
+                "id": group.get("id"),
+                "name": group.get("name"),
+                "type": group.get("type"),
+                "budgetVariability": group.get("budgetVariability"),
+                "groupLevelBudgetingEnabled": group.get("groupLevelBudgetingEnabled"),
+            }
+            if "categories" in group:
+                for cat in group["categories"]:
+                    cat_id = cat.get("id")
+                    if cat_id:
+                        category_lookup[cat_id] = {
+                            "id": cat.get("id"),
+                            "name": cat.get("name"),
+                            "icon": cat.get("icon"),
+                            "order": cat.get("order"),
+                            "budgetVariability": cat.get("budgetVariability"),
+                            "excludeFromBudget": cat.get("excludeFromBudget"),
+                            "isSystemCategory": cat.get("isSystemCategory"),
+                            "updatedAt": cat.get("updatedAt"),
+                            "group": group_info,
+                            "rolloverPeriod": cat.get("rolloverPeriod"),
+                        }
+
+    # Enrich monthlyAmountsByCategory with full category details
+    if "budgetData" in budgets and "monthlyAmountsByCategory" in budgets["budgetData"]:
+        for cat_entry in budgets["budgetData"]["monthlyAmountsByCategory"]:
+            cat_id = cat_entry.get("category", {}).get("id")
+            if cat_id and cat_id in category_lookup:
+                cat_entry["category"] = category_lookup[cat_id]
+
+    # Create DataFrame preserving the nested structure
+    # Using pd.DataFrame with a single record preserves nested dicts/lists as-is
+    df = pd.DataFrame([budgets])
     df["synced_at"] = synced_at
     return df
