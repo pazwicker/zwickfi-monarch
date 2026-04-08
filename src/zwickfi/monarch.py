@@ -1,7 +1,6 @@
 """Monarch Money API wrapper for extracting financial data."""
 
 import asyncio
-import math
 from datetime import datetime
 
 import pandas as pd
@@ -28,37 +27,45 @@ def get_total_transactions(mm: MonarchMoney) -> int:
 
 def get_transactions(mm: MonarchMoney, limit: int = 1000) -> pd.DataFrame:
     """
-    Retrieve transactions with pagination support.
+    Retrieve all transactions, including hidden (hideFromReports=True) ones.
+
+    Makes two paginated sweeps — one for visible transactions and one for
+    hidden transactions — then concatenates the results.
 
     Args:
         mm: Authenticated MonarchMoney client.
-        limit: Maximum number of transactions to retrieve.
+        limit: Kept for backward compatibility; all transactions are now
+            fetched regardless of this value.
 
     Returns:
         DataFrame containing transaction data.
     """
     max_per_request = 1000
-    df = pd.DataFrame()
+    all_dfs = []
 
-    if limit > max_per_request:
-        iterations = math.ceil(limit / max_per_request)
-        for i in range(iterations):
-            offset = i * max_per_request
+    for hidden in [False, True]:
+        label = "hidden" if hidden else "visible"
+        offset = 0
+        while True:
             print(
-                f"Getting transactions {offset} through {offset + max_per_request - 1}."
+                f"Getting {label} transactions {offset} through "
+                f"{offset + max_per_request - 1}."
             )
             transactions = asyncio.run(
-                mm.get_transactions(limit=max_per_request, offset=offset)
+                mm.get_transactions(
+                    limit=max_per_request,
+                    offset=offset,
+                    hidden_from_reports=hidden,
+                )
             )
-            df_temp = json_to_dataframe(transactions, key=None)
-            # Handle nested structure
-            df_temp = json_to_dataframe(transactions["allTransactions"]["results"])
-            df = pd.concat([df, df_temp], ignore_index=True)
-    else:
-        transactions = asyncio.run(mm.get_transactions(limit=limit, offset=0))
-        df = json_to_dataframe(transactions["allTransactions"]["results"])
+            results = transactions["allTransactions"]["results"]
+            if results:
+                all_dfs.append(json_to_dataframe(results))
+            if len(results) < max_per_request:
+                break
+            offset += max_per_request
 
-    return df
+    return pd.concat(all_dfs, ignore_index=True) if all_dfs else pd.DataFrame()
 
 
 def get_transaction_categories(mm: MonarchMoney) -> pd.DataFrame:
