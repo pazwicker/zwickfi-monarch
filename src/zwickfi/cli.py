@@ -1,10 +1,8 @@
 """Main CLI entry point for zwickfi-monarch data sync."""
 
-from datetime import date
-
 import pandas as pd
 
-from . import bigquery, forecasts, monarch
+from . import bigquery, monarch
 from .auth import get_bigquery_client, get_monarch_client
 
 
@@ -14,8 +12,7 @@ def main() -> None:
 
     1. Authenticate with Google Cloud and Monarch Money
     2. Extract data from Monarch Money API
-    3. Generate credit card spending forecasts
-    4. Load all data to BigQuery
+    3. Load all data to BigQuery
     """
     # Authenticate
     try:
@@ -48,12 +45,7 @@ def main() -> None:
         history = monarch.get_account_history(mm, account_id)
         account_history = pd.concat([account_history, history], ignore_index=True)
 
-    # Generate forecasts
-    forecast_data, credit_cards = forecasts.get_forecast_data(bq_client)
-    forecast_df = forecasts.generate_forecasts(forecast_data, credit_cards)
-
     # Load to BigQuery
-    today = date.today()
     datasets = [
         (transactions, "monarch_money", "transactions"),
         (transaction_categories, "monarch_money", "transaction_categories"),
@@ -61,7 +53,6 @@ def main() -> None:
         (accounts, "monarch_money", "accounts"),
         (budgets, "monarch_money", "budgets"),
         (account_history, "monarch_money", "account_balance_history"),
-        (forecast_df, "forecasts", f"credit_card_forecast_{today}"),
     ]
 
     for df, schema, table_name in datasets:
